@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Marketplace {
+  etsy
+  shopify
+  amazon
+}
+
+enum SyncStatus {
+  pending
+  success
+  partial
+  failed
+}
+
+enum SyncLogStatus {
+  pending
+  success
+  failed
+  rate_limited
+}
+
+enum CallbackOutboxStatus {
+  pending
+  success
+  failed
+}
+
+model Store {
+  id                    String    @id @db.Uuid
+  organizationId        String    @db.VarChar(255)
+  marketplace           Marketplace
+  externalStoreId      String    @db.VarChar(255)
+  storeName            String    @db.VarChar(255)
+  accessToken          String    @db.Text
+  currency             String    @db.VarChar(10)
+  syncToken            String    @unique @db.Uuid
+  syncStatus           SyncStatus @default(pending)
+  lastSyncAt           DateTime? @db.Timestamptz(6)
+  importedSuccessCount Int       @default(0)
+  createdAt            DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime  @updatedAt @db.Timestamptz(6)
+
+  syncLogs       SyncLog[]
+  callbackOutbox CallbackOutbox[]
+
+  @@unique([organizationId, marketplace, externalStoreId])
+  @@index([syncStatus])
+  @@index([organizationId])
+  @@index([marketplace])
+  @@map("stores")
+}
+
+model SyncLog {
+  id           String         @id @db.Uuid
+  storeId      String         @db.Uuid
+  receipt      String         @db.VarChar(255)
+  status       SyncLogStatus  @default(pending)
+  orderId      String?        @db.VarChar(255)
+  amount       Decimal?       @db.Decimal(10, 2)
+  currency     String?        @db.VarChar(10)
+  errorDetails String?        @db.Text
+  attempt      Int            @default(0)
+  nextRetryAt  DateTime?      @db.Timestamptz(6)
+  importedAt   DateTime?      @db.Timestamptz(6)
+  createdAt    DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime       @updatedAt @db.Timestamptz(6)
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, receipt])
+  @@index([status, nextRetryAt])
+  @@index([storeId, status])
+  @@index([storeId, createdAt])
+  @@map("sync_logs")
+}
+
+model WebhookEndpoint {
+  id             String   @id @db.Uuid
+  organizationId String   @db.VarChar(255)
+  event          String   @db.VarChar(64)
+  targetUrl      String   @db.Text
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([organizationId, event, targetUrl])
+  @@index([organizationId])
+  @@index([event])
+  @@map("webhook_endpoints")
+}
+
+model CallbackOutbox {
+  id             String              @id @db.Uuid
+  organizationId String              @db.VarChar(255)
+  storeId        String              @db.Uuid
+  event          String              @db.VarChar(64)
+  payload        Json                @db.JsonB
+  status         CallbackOutboxStatus @default(pending)
+  attempt        Int                 @default(0)
+  nextRetryAt    DateTime?          @db.Timestamptz(6)
+  lastError      String?            @db.Text
+  createdAt      DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime           @updatedAt @db.Timestamptz(6)
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextRetryAt])
+  @@index([organizationId, createdAt])
+  @@index([storeId, createdAt])
+  @@map("callback_outbox")
+}

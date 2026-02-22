@@ -1,0 +1,52 @@
+{
+  "name": "marketplace-sync-service",
+  "version": "1.0.0",
+  "description": "Marketplace Order Sync API / Callback / Worker",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "prisma:format": "prisma format",
+    "prisma:export": "node scripts/export-schema.js",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "db:migrate": "prisma migrate dev",
+    "test": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts tests/integration",
+    "worker:sync": "node dist/workers/sync-worker.js",
+    "worker:scheduler": "node dist/workers/sync-scheduler.js",
+    "dev:worker:sync": "tsx watch src/workers/sync-worker.ts",
+    "dev:worker:scheduler": "tsx watch src/workers/sync-scheduler.ts",
+    "worker:callback": "node dist/workers/callback-worker.js",
+    "worker:callback:scheduler": "node dist/workers/callback-scheduler.js",
+    "dev:worker:callback": "tsx watch src/workers/callback-worker.ts",
+    "dev:worker:callback:scheduler": "tsx watch src/workers/callback-scheduler.ts",
+    "tools:mock-webhook": "tsx src/tools/mock-webhook-server.ts --port 4000",
+    "dev:all": "bash scripts/dev-all-macos.sh",
+    "flow:endpoints": "node scripts/run-endpoint-flow.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@prisma/client": "^5.19.1",
+    "fastify": "^4.26.2",
+    "zod": "^3.23.8",
+    "bullmq": "^5.34.0",
+    "ioredis": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.12",
+    "@vitest/coverage-v8": "^2.0.3",
+    "prisma": "^5.19.1",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.3"
+  }
+}
